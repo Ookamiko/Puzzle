@@ -1,9 +1,9 @@
-function Boxes(x, y, w, h, ctx2d) {
+function Boxes(ctx2d, x, y, w, h) {
 	this.x = x;
 	this.y = y;
 	this.width = w;
 	this.height = h;
-	this.number = '';
+	this.number = 0;
 	this.hint = [false, false, false, false, false, false, false, false, false];
 	this.locked = false;
 	this.selected = false;
@@ -21,7 +21,7 @@ Boxes.prototype.draw = function() {
 		this.ctx.fillRect(0, 0, this.width, this.height);
 	}
 
-	if (this.number != '') {
+	if (this.number != 0) {
 		if (this.locked) {
 			this.ctx.fillStyle = "black";
 		} else {
@@ -66,7 +66,7 @@ Boxes.prototype.setNumber = function(num, draw=true) {
 }
 
 Boxes.prototype.unsetNumber = function(draw=true) {
-	this.number = '';
+	this.number = 0;
 	if (draw) {
 		this.draw();
 	}
@@ -75,9 +75,9 @@ Boxes.prototype.unsetNumber = function(draw=true) {
 Boxes.prototype.toggleHint = function(num, draw=true) {
 	this.hint[num - 1] = !this.hint[num - 1];
 
-	if (this.number != '') {
+	if (this.number != 0) {
 		this.hint[this.number - 1] = true;
-		this.number = '';
+		this.number = 0;
 	}
 
 	if (draw) {
@@ -88,9 +88,9 @@ Boxes.prototype.toggleHint = function(num, draw=true) {
 Boxes.prototype.setHint = function(num, draw=true) {
 	this.hint[num - 1] = true;
 
-	if (this.number != '') {
+	if (this.number != 0) {
 		this.hint[this.number - 1] = true;
-		this.number = '';
+		this.number = 0;
 	}
 
 	if (draw) {
