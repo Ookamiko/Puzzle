@@ -24,6 +24,4 @@ window.addEventListener('keyup', event => {
 	grid.treatKey(event);
 });
 
-if (!grid.generateGrid()) {
-	alert("Error while generating grid");
-}
+grid.generateGrid();

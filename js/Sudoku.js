@@ -7,6 +7,15 @@ function Sudoku(ctx2d, x, y, boxW, boxH) {
 	this.boxes = generateBoxes(ctx2d, x, y, boxW, boxH);
 	this.selectedBox = -1;
 	this.allowedNumbers = [1,2,3,4,5,6,7,8,9];
+	this.solution = [];
+	this.grid = [];
+	this.loading = true;
+	this.loadingAnimFull = false;
+	this.loadingAnimAngle = 0;
+
+	for (let i = 0 ; i < 81 ; i++) {
+		this.grid[i] = 0;
+	}
 }
 
 function generateBoxes(ctx, x, y, width, height) {
@@ -23,7 +32,49 @@ function generateBoxes(ctx, x, y, width, height) {
 	return boxes;
 }
 
+Sudoku.prototype.loadingAnim = function() {
+	if (this.loading) {
+		let self = this;
+		requestAnimationFrame(() => {
+			self.loadingAnim();
+		});
+
+		this.ctx.clearRect(0, 0, this.width, this.height);
+		this.ctx.save();
+
+		this.ctx.lineWidth = 5;
+		this.ctx.translate(this.width / 2, this.height / 2);
+		this.ctx.beginPath();
+		if (this.loadingAnimFull) {
+			this.ctx.arc(0, 0, 50, this.loadingAnimAngle, Math.PI * 2, false);
+		} else {
+			this.ctx.arc(0, 0, 50, 0, this.loadingAnimAngle, false);
+		}
+		this.ctx.stroke();
+		this.ctx.closePath();
+
+		this.loadingAnimAngle += (Math.PI / 180) * 5;
+
+		if (this.loadingAnimAngle >= Math.PI * 2) {
+			this.loadingAnimFull = !this.loadingAnimFull;
+			this.loadingAnimAngle = 0;
+		}
+
+		this.ctx.translate(0, 100);
+		this.ctx.font = '50px sans-serif';
+		this.ctx.fillStyle = 'black';
+		this.ctx.textAlign = 'center';
+		this.ctx.fillText("Generating grid", 0, 0);
+
+		this.ctx.restore();
+	}
+}
+
 Sudoku.prototype.draw = function(drawBoxes=false) {
+
+	if (this.loading) {
+		return;
+	}
 
 	if (drawBoxes) {
 		this.boxes.forEach(b => {
@@ -81,6 +132,11 @@ Sudoku.prototype.unselectBox = function(draw=true) {
 }
 
 Sudoku.prototype.treatKey = function(keyEvent, draw=true) {
+
+	if (this.loading) {
+		return;
+	}
+
 	let key = Number(keyEvent.key);
 	let performEvent = false;
 	if (key && this.selectedBox != -1) {
@@ -91,6 +147,7 @@ Sudoku.prototype.treatKey = function(keyEvent, draw=true) {
 			let row = Math.floor(this.selectedBox / 9);
 			let col = this.selectedBox % 9;
 			if (validNumber(this.boxes, row, col, key)) {
+				this.grid[this.selectedBox] = key;
 				this.boxes[this.selectedBox].setNumber(key);
 				if(this.isFinish() && this.finishEvent) {
 					this.draw();
@@ -100,6 +157,7 @@ Sudoku.prototype.treatKey = function(keyEvent, draw=true) {
 		}
 	} else if ((keyEvent.key == 'Backspace' || keyEvent.key == 'Delete') && this.selectedBox != -1) {
 		performEvent = true;
+		this.grid[this.selectedBox] = 0;
 		this.boxes[this.selectedBox].unsetNumber();
 	} else if (keyEvent.key.includes("Arrow")) {
 		performEvent = true;
@@ -138,8 +196,8 @@ Sudoku.prototype.treatKey = function(keyEvent, draw=true) {
 }
 
 Sudoku.prototype.isFinish = function() {
-	for(let i = 0; i < this.boxes.length ; i++) {
-		if (this.boxes[i].number == 0) {
+	for(let i = 0; i < this.grid.length ; i++) {
+		if (this.grid[i] == 0) {
 			return false;
 		}
 	}
@@ -156,27 +214,16 @@ function getNextAvailableBox(boxes, start, jump) {
 	return pos >= 0 && pos < boxes.length ? pos : start;
 }
 
-function shuffle(array) {
-	let size = array.length;
-
-	for (let i = 0; i < size * 2; i++) {
-		let randa = Math.floor(Math.random() * size);
-		let randb = Math.floor(Math.random() * size);
-
-		[array[randa], array[randb]] = [array[randb], array[randa]];
-	}
-}
-
-function validNumber(cases, row, col, test) {
+function validNumber(grid, row, col, test) {
 	for (let i = 0 ; i < 9 ; i++) {
-		if (cases[row * 9 + i].number == test || cases[i * 9 + col].number == test) {
+		if (grid[row * 9 + i] == test || grid[i * 9 + col] == test) {
 			return false;
 		}
 	}
 
 	for (let r = row - (row % 3); r < row - (row % 3) + 3 ; r++) {
 		for (let c = col - (col % 3) ; c < col - (col % 3) + 3 ; c++) {
-			if (cases[r * 9 + c].number == test) {
+			if (grid[r * 9 + c] == test) {
 				return false;
 			}
 		}
@@ -185,92 +232,28 @@ function validNumber(cases, row, col, test) {
 	return true;
 }
 
-function recursiveGen(boxes, numbers, index=0) {
-	if (index >= boxes.length) {
-		return true;
-	}
-
-	let row = Math.floor(index / 9);
-	let col = index % 9;
-	shuffle(numbers);
-
-	for (let i = 0 ; i < numbers.length ; i++) {
-		let test = numbers[i];
-		if (validNumber(boxes, row, col, test)) {
-			boxes[index].number = test;
-			if (recursiveGen(boxes, numbers, index+1)) {
-				return true;
-			} else {
-				boxes[index].number = 0
-			}
-		}
-	}
-
-	return false;
-}
-
-function solveGrid(boxes, numbers, index=0) {
-	while(index < boxes.length && boxes[index].number != 0) {
-		index += 1;
-	}
-
-	if (index >= boxes.length) {
-		return 1;
-	}
-
-	let solution = 0;
-	let row = Math.floor(index / 9);
-	let col = index % 9;
-
-	for (let j = 0 ; j < numbers.length ; j++) {
-		if (validNumber(boxes, row, col, numbers[j])) {
-			let copy = structuredClone(boxes);
-			copy[index].number = numbers[j];
-			solution += solveGrid(copy, numbers, index+1);
-		}
-	}
-
-	return solution;
-}
-
-function simplifyBoxes(boxes) {
-	let copy = [];
-	boxes.forEach(b => {
-		copy[copy.length] = {number: b.number};
-	});
-
-	return copy;
-}
-
-function recursiveRemove(grid, attemp) {
-	while (attemp > 0) {
-
-		let index = Math.floor(Math.random() * grid.boxes.length);
-		while (grid.boxes[index].number == 0) {
-			index = Math.floor(Math.random() * grid.boxes.length);
-		}
-
-		let remember = grid.boxes[index].number;
-		grid.boxes[index].number = 0;
-		let count = solveGrid(simplifyBoxes(grid.boxes), grid.allowedNumbers);
-
-		if (count != 1) {
-			attemp -= 1;
-			grid.boxes[index].number = remember;
-		}
-	}
-}
-
 Sudoku.prototype.generateGrid = function() {
-	if(recursiveGen(this.boxes, this.allowedNumbers.slice())) {
-		recursiveRemove(this, 1);
-		this.boxes.forEach(b => {
-			b.locked = b.number != 0;
-		});
-		this.draw(true);
-	} else {
-		return false;
-	}
+	this.loading = true;
+	this.loadingAnim();
+	const myWorker = new Worker("./js/worker.js");
+	myWorker.postMessage([]);
 
-	return true;
-}
+	let self = this;
+	myWorker.onmessage = function(e) {
+		let result = e.data;
+		if (result != undefined) {
+			self.solution = result.solution;
+			self.grid = result.grid;
+			for(let i = 0; i < self.boxes.length ; i++) {
+				self.boxes[i].locked = self.grid[i] != 0;
+				self.boxes[i].number = self.grid[i];
+			}
+
+			self.loading = false;
+
+			self.draw(true);
+		} else {
+			console.log('Error');
+		}
+	}
+};
