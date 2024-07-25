@@ -1,0 +1,9 @@
+* {
+	margin: 0;
+	padding: 0;
+}
+
+#master_canvas {
+	margin: 10px;
+	border: 1px solid black;
+}
