@@ -1,3 +1,7 @@
+/*
+version = 1.0.0_beta1
+ */
+
 function shuffle(array) {
 	let size = array.length;
 

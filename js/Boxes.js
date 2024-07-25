@@ -1,3 +1,7 @@
+/*
+version = 1.0.0_beta1
+ */
+
 function Boxes(ctx2d, x, y, w, h) {
 	this.x = x;
 	this.y = y;

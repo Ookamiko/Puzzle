@@ -1,3 +1,7 @@
+/*
+version = 1.0.0_beta1
+ */
+
 function Sudoku(ctx2d, x, y, boxW, boxH) {
 	this.ctx = ctx2d;
 	this.x = x;
