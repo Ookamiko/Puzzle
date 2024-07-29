@@ -13,6 +13,7 @@ class Boxes {
 	#hint = [false, false, false, false, false, false, false, false, false];
 	#locked = false;
 	#selected = false;
+	#highlighted = false;
 	#update_state = false;
 
 	constructor(ctx2d, x, y, width, height) {
@@ -126,6 +127,24 @@ class Boxes {
 		return this;
 	}
 
+	highlight() {
+		if (!this.#highlighted) {
+			this.#highlighted = true;
+			this.#update_state = true;
+		}
+
+		return this;
+	}
+
+	unhighlight() {
+		if (this.#highlighted) {
+			this.#highlighted = false;
+			this.#update_state = true;
+		}
+
+		return this;
+	}
+
 	draw() {
 		if (!this.#update_state) return this;
 
@@ -136,8 +155,12 @@ class Boxes {
 		this.#ctx.translate(this.#x, this.#y);
 
 		this.#ctx.clearRect(0, 0, this.#width, this.#height);
+
 		if (!this.#locked && this.#selected) {
 			this.#ctx.fillStyle = "yellow";
+			this.#ctx.fillRect(0, 0, this.#width, this.#height);
+		} else if (this.#highlighted) {
+			this.#ctx.fillStyle = "lightgrey";
 			this.#ctx.fillRect(0, 0, this.#width, this.#height);
 		}
 

@@ -11,6 +11,8 @@ class Sudoku {
 	#height = 0;
 	#boxes;
 	#selectedBox = -1;
+	#selectedRow = [];
+	#selectedCol = [];
 	#allowedNumbers;
 	#solution = [];
 	#grid = [];
@@ -112,10 +114,20 @@ class Sudoku {
 		if (this.#selectedBox != index) {
 			if (this.#selectedBox != -1) {
 				this.#boxes[this.#selectedBox].unselect();
+				
+				this.#selectedRow.concat(this.#selectedCol).forEach((i) => {
+					this.#boxes[i].unhighlight();
+				});
 			}
 
 			this.#boxes[index].select();
 			this.#selectedBox = index;
+
+			[this.#selectedRow, this.#selectedCol] = this.#getRowCol(index);
+
+			this.#selectedRow.concat(this.#selectedCol).forEach((i) => {
+				this.#boxes[i].highlight();
+			});
 
 			this.#update_state = true;
 		}
@@ -127,6 +139,12 @@ class Sudoku {
 		if (this.#selectedBox != -1) {
 			this.#boxes[this.#selectedBox].unselect();
 			this.#selectedBox = -1;
+
+			this.#selectedRow.concat(this.#selectedCol).forEach((i) => {
+				this.#boxes[i].unhighlight();
+			});
+
+			[this.#selectedRow, this.#selectedCol] = [[], []];
 
 			this.#update_state = true;
 		}
@@ -215,6 +233,21 @@ class Sudoku {
 		}
 
 		return pos >= 0 && pos < boxes.length ? pos : start;
+	}
+
+	#getRowCol(index) {
+		let row = Math.floor(index / 9);
+		let col = index % 9;
+
+		let pickRow = [];
+		let pickCol = [];
+
+		for (let i = 0 ; i < 9 ; i++) {
+			pickRow.push(row * 9 + i);
+			pickRow.push(i * 9 + col);
+		}
+
+		return [pickRow, pickCol];
 	}
 
 	#validNumber(grid, row, col, test) {
