@@ -2,128 +2,140 @@
 version = 1.0.0_beta1
  */
 
-function Boxes(ctx2d, x, y, w, h) {
-	this.x = x;
-	this.y = y;
-	this.width = w;
-	this.height = h;
-	this.number = 0;
-	this.hint = [false, false, false, false, false, false, false, false, false];
-	this.locked = false;
-	this.selected = false;
-	this.ctx = ctx2d;
-}
+class Boxes {
 
-Boxes.prototype.draw = function() {
-	this.ctx.save();
+	#ctx;
+	#x = 0;
+	#y = 0;
+	#width = 0;
+	#height = 0;
+	#number = 0;
+	#hint = [false, false, false, false, false, false, false, false, false];
+	#locked = false;
+	#selected = false;
 
-	this.ctx.translate(this.x, this.y);
-
-	this.ctx.clearRect(0, 0, this.width, this.height);
-	if (!this.locked && this.selected) {
-		this.ctx.fillStyle = "yellow";
-		this.ctx.fillRect(0, 0, this.width, this.height);
+	constructor(ctx2d, x, y, width, height) {
+		this.#ctx = ctx2d;
+		this.#x = x;
+		this.#y = y;
+		this.#width = width;
+		this.#height = height;
 	}
 
-	if (this.number != 0) {
-		if (this.locked) {
-			this.ctx.fillStyle = "black";
-		} else {
-			this.ctx.fillStyle = "blue";
+	isClicked(x, y) {
+		return x > this.#x && x < this.#x + this.#width && y > this.#y && y < this.#y + this.#height;
+	}
+
+	toggleHint(num, draw=true) {
+		this.#hint[num - 1] = !this.#hint[num - 1];
+
+		if (this.#number != 0) {
+			this.#hint[this.#number - 1] = true;
+			this.#number = 0;
 		}
-		this.ctx.font = '75px sans-serif';
-		this.ctx.textAlign = 'center';
-		this.ctx.fillText(this.number, 0 + this.width / 2, this.height - 25);
-	} else {
-		let size = this.width / 3;
-		this.ctx.font = '20px sans-serif';
-		this.ctx.fillStyle = 'grey';
-		this.ctx.textAlign = 'center';
-		for (let y = 0; y < 3 ; y++) {
-			for (let x = 0 ; x < 3 ; x++) {
-				if (this.hint[y * 3 + x]) {
-					this.ctx.fillText((y * 3 + x) + 1, size / 2 + x * size, (y + 1) * size - 10);
-				}
+
+		if (draw) {
+			this.draw();
+		}
+	}
+
+	setHint(num, draw=true) {
+		this.#hint[num - 1] = true;
+
+		if (this.#number != 0) {
+			this.#hint[this.#number - 1] = true;
+			this.#number = 0;
+		}
+
+		if (draw) {
+			this.draw();
+		}
+	}
+
+	unsetHint(num, draw=true) {
+		this.#hint[num - 1] = false;
+
+		if (draw) {
+			this.draw();
+		}
+	}
+
+	select(draw=true) {
+		if (!this.#locked) {
+			this.#selected = true;
+			if (draw) {
+				this.draw();
 			}
 		}
 	}
 
-	this.ctx.strokeRect(0, 0, this.width, this.height);
-
-	this.ctx.restore();
-}
-
-Boxes.prototype.isClicked = function(x, y) {
-	return x > this.x && x < this.x + this.width && y > this.y && y < this.y + this.height;
-}
-
-Boxes.prototype.setNumber = function(num, draw=true) {
-	this.number = num;
-
-	for(let i = 0; i < this.hint.length; i++) {
-		this.hint[i] = false;
-	}
-
-	if (draw) {
-		this.draw();
-	}
-}
-
-Boxes.prototype.unsetNumber = function(draw=true) {
-	this.number = 0;
-	if (draw) {
-		this.draw();
-	}
-}
-
-Boxes.prototype.toggleHint = function(num, draw=true) {
-	this.hint[num - 1] = !this.hint[num - 1];
-
-	if (this.number != 0) {
-		this.hint[this.number - 1] = true;
-		this.number = 0;
-	}
-
-	if (draw) {
-		this.draw();
-	}
-}
-
-Boxes.prototype.setHint = function(num, draw=true) {
-	this.hint[num - 1] = true;
-
-	if (this.number != 0) {
-		this.hint[this.number - 1] = true;
-		this.number = 0;
-	}
-
-	if (draw) {
-		this.draw();
-	}
-}
-
-Boxes.prototype.unsetHint = function(num, draw=true) {
-	this.hint[num - 1] = false;
-
-	if (draw) {
-		this.draw();
-	}
-}
-
-Boxes.prototype.select = function(draw=true) {
-	if (!this.locked) {
-		this.selected = true;
-		if (draw) {
-			this.draw();
+	unselect(draw=true) {
+		if (!this.#locked) {
+			this.#selected = false;
+			if (draw) {
+				this.draw();
+			}
 		}
 	}
-}
 
-Boxes.prototype.unselect = function(draw=true) {
-	if (!this.locked) {
-		this.selected = false;
-		if (draw) {
-			this.draw();
+	draw() {
+		this.#ctx.save();
+
+		this.#ctx.translate(this.#x, this.#y);
+
+		this.#ctx.clearRect(0, 0, this.#width, this.#height);
+		if (!this.#locked && this.#selected) {
+			this.#ctx.fillStyle = "yellow";
+			this.#ctx.fillRect(0, 0, this.#width, this.#height);
 		}
+
+		if (this.#number != 0) {
+			if (this.#locked) {
+				this.#ctx.fillStyle = "black";
+			} else {
+				this.#ctx.fillStyle = "blue";
+			}
+			this.#ctx.font = '75px sans-serif';
+			this.#ctx.textAlign = 'center';
+
+			let metrics = this.#ctx.measureText(this.#number);
+			let fontHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+			this.#ctx.fillText(this.#number, 0 + this.#width / 2, (this.#height + fontHeight) / 2);
+		} else {
+			let size = this.#width / 3;
+			this.#ctx.font = '20px sans-serif';
+			this.#ctx.fillStyle = 'grey';
+			this.#ctx.textAlign = 'center';
+			for (let y = 0; y < 3 ; y++) {
+				for (let x = 0 ; x < 3 ; x++) {
+					if (this.#hint[y * 3 + x]) {
+						this.#ctx.fillText((y * 3 + x) + 1, size / 2 + x * size, (y + 1) * size - 10);
+					}
+				}
+			}
+		}
+
+		this.#ctx.strokeRect(0, 0, this.#width, this.#height);
+
+		this.#ctx.restore();
+	}
+
+	// Accessor
+	
+	get number() {
+		return this.#number;
+	}
+
+	set number(value) {
+		this.#number = value;
+	}
+
+	get locked() {
+		return this.#locked;
+	}
+
+	set locked(value) {
+		this.#locked = value;
 	}
 }

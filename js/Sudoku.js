@@ -152,7 +152,7 @@ Sudoku.prototype.treatKey = function(keyEvent, draw=true) {
 			let col = this.selectedBox % 9;
 			if (validNumber(this.boxes, row, col, key)) {
 				this.grid[this.selectedBox] = key;
-				this.boxes[this.selectedBox].setNumber(key);
+				this.boxes[this.selectedBox].number = key;
 				if(this.isFinish() && this.finishEvent) {
 					this.draw();
 					this.finishEvent();
@@ -162,7 +162,7 @@ Sudoku.prototype.treatKey = function(keyEvent, draw=true) {
 	} else if ((keyEvent.key == 'Backspace' || keyEvent.key == 'Delete') && this.selectedBox != -1) {
 		performEvent = true;
 		this.grid[this.selectedBox] = 0;
-		this.boxes[this.selectedBox].unsetNumber();
+		this.boxes[this.selectedBox].number = 0;
 	} else if (keyEvent.key.includes("Arrow")) {
 		performEvent = true;
 		let newSelect;
