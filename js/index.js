@@ -18,10 +18,16 @@ canvas.addEventListener('click', function(event) {
 	} else {
 		grid.unselectBox();
 	}
+
+	grid.draw();
 });
 
 window.addEventListener('keyup', event => {
-	grid.treatKey(event);
+	grid.treatKey(event).draw();
+
+	if (grid.isFinish() && grid.finishEvent) {
+		grid.finishEvent();
+	}
 });
 
 grid.generateGrid();

@@ -17,6 +17,7 @@ class Sudoku {
 	#loading = false;
 	#loadingAnimFull = false;
 	#loadingAnimAngle = 0;
+	#update_state = false;
 	finishEvent;
 
 	constructor(ctx2d, x, y, boxW, boxH) {
@@ -33,6 +34,7 @@ class Sudoku {
 		this.#loading = true;
 		this.#loadingAnimFull = false;
 		this.#loadingAnimAngle = 0;
+		this.#update_state = true;
 
 		for (let i = 0 ; i < 81 ; i++) {
 			this.#grid[i] = 0;
@@ -95,80 +97,73 @@ class Sudoku {
 		return x > this.#x && x < this.#x + this.#width && y > this.#y && y < this.#y + this.#height;
 	}
 
-	clickBox(x, y, draw=true) {
+	clickBox(x, y) {
 		for (let i = 0; i < this.#boxes.length ; i++) {
 			if (this.#boxes[i].isClicked(x, y)) {
 				this.selectBox(i);
 				break;
 			}
 		};
+
+		return this;
 	}
 
-	selectBox(index, draw=true) {
-		if (this.#selectedBox != -1) {
-			this.#boxes[this.#selectedBox]
-				.unselect()
-				.draw();
+	selectBox(index) {
+		if (this.#selectedBox != index) {
+			if (this.#selectedBox != -1) {
+				this.#boxes[this.#selectedBox].unselect();
+			}
+
+			this.#boxes[index].select();
+			this.#selectedBox = index;
+
+			this.#update_state = true;
 		}
 
-		this.#boxes[index]
-			.select()
-			.draw();
-
-		this.#selectedBox = index;
-
-		if (draw) {
-			this.draw();
-		}
+		return this;
 	}
 
-	unselectBox(draw=true) {
+	unselectBox() {
 		if (this.#selectedBox != -1) {
-			this.#boxes[this.#selectedBox]
-				.unselect()
-				.draw();
+			this.#boxes[this.#selectedBox].unselect();
 			this.#selectedBox = -1;
+
+			this.#update_state = true;
 		}
 
-		if (draw) {
-			this.draw();
-		}
+		return this;
 	}
 
 	treatKey(keyEvent, draw=true) {
 
-		if (this.#loading) {
-			return;
-		}
+		if (this.#loading) return this;
 
 		let key = Number(keyEvent.key);
 		let performEvent = false;
+
 		if (key && this.#selectedBox != -1) {
 			performEvent = true;
+
 			if (keyEvent.altKey) {
-				this.#boxes[this.#selectedBox]
-					.toggleHint(key)
-					.draw();
+				this.#boxes[this.#selectedBox].toggleHint(key);
+				this.#update_state = true;
 			} else {
 				let row = Math.floor(this.#selectedBox / 9);
 				let col = this.#selectedBox % 9;
+
 				if (this.#validNumber(this.#grid, row, col, key)) {
 					this.#grid[this.#selectedBox] = key;
-					this.#boxes[this.#selectedBox]
-						.setText(key)
-						.draw();
-					if(this.isFinish() && this.finishEvent) {
-						this.draw();
-						this.finishEvent();
-					}
+					this.#boxes[this.#selectedBox].setText(key);
+					this.#update_state = true;
 				}
 			}
 		} else if ((keyEvent.key == 'Backspace' || keyEvent.key == 'Delete') && this.#selectedBox != -1) {
 			performEvent = true;
 			this.#grid[this.#selectedBox] = 0;
-			this.#boxes[this.#selectedBox]
-				.unsetText()
-				.draw();
+			this.#boxes[this.#selectedBox].unsetText();
+
+			this.#update_state = true;
+
 		} else if (keyEvent.key.includes("Arrow")) {
 			performEvent = true;
 			let newSelect;
@@ -200,9 +195,7 @@ class Sudoku {
 			keyEvent.stopPropagation();
 		}
 
-		if (draw) {
-			this.draw();
-		}
+		return this;
 	}
 
 	isFinish() {
@@ -263,26 +256,27 @@ class Sudoku {
 					}
 				}
 
+				self.#update_state = true;
 				self.#loading = false;
 
-				self.draw(true);
+				self.draw();
 			} else {
 				console.log('Error');
 			}
 		}
 	}
 
-	draw(drawBoxes=false) {
+	draw() {
 
-		if (this.#loading) {
-			return;
-		}
+		if (this.#loading) return this;
 
-		if (drawBoxes) {
-			this.#boxes.forEach(b => {
-				b.draw();
-			});
-		}
+		if (!this.#update_state) return this;
+
+		this.#update_state = false;
+
+		this.#boxes.forEach(b => {
+			b.draw();
+		});
 
 		this.#ctx.save();
 		this.#ctx.translate(this.#x, this.#y);
@@ -294,6 +288,8 @@ class Sudoku {
 		}
 
 		this.#ctx.restore();
+
+		return this;
 	}
 
 	// Accessor
