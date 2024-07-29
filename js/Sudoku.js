@@ -44,9 +44,9 @@ class Sudoku {
 
 		for (let r = 0; r < 9 ; r++) {
 			for (let c = 0; c < 9 ; c++) {
-				let tmp = new Boxes(ctx, x + width * c, y + height * r, width, height);
-				tmp.locked = true;
-				boxes[boxes.length] = tmp;
+				boxes[boxes.length] = 
+					new Boxes(ctx, x + width * c, y + height * r, width, height)
+						.lock();
 			}
 		}
 
@@ -106,10 +106,15 @@ class Sudoku {
 
 	selectBox(index, draw=true) {
 		if (this.#selectedBox != -1) {
-			this.#boxes[this.#selectedBox].unselect();
+			this.#boxes[this.#selectedBox]
+				.unselect()
+				.draw();
 		}
 
-		this.#boxes[index].select();
+		this.#boxes[index]
+			.select()
+			.draw();
+
 		this.#selectedBox = index;
 
 		if (draw) {
@@ -119,7 +124,9 @@ class Sudoku {
 
 	unselectBox(draw=true) {
 		if (this.#selectedBox != -1) {
-			this.#boxes[this.#selectedBox].unselect();
+			this.#boxes[this.#selectedBox]
+				.unselect()
+				.draw();
 			this.#selectedBox = -1;
 		}
 
@@ -139,15 +146,17 @@ class Sudoku {
 		if (key && this.#selectedBox != -1) {
 			performEvent = true;
 			if (keyEvent.altKey) {
-				this.#boxes[this.#selectedBox].toggleHint(key);
-				this.#boxes[this.#selectedBox].draw();
+				this.#boxes[this.#selectedBox]
+					.toggleHint(key)
+					.draw();
 			} else {
 				let row = Math.floor(this.#selectedBox / 9);
 				let col = this.#selectedBox % 9;
 				if (this.#validNumber(this.#grid, row, col, key)) {
 					this.#grid[this.#selectedBox] = key;
-					this.#boxes[this.#selectedBox].number = key;
-					this.#boxes[this.#selectedBox].draw();
+					this.#boxes[this.#selectedBox]
+						.setText(key)
+						.draw();
 					if(this.isFinish() && this.finishEvent) {
 						this.draw();
 						this.finishEvent();
@@ -157,8 +166,9 @@ class Sudoku {
 		} else if ((keyEvent.key == 'Backspace' || keyEvent.key == 'Delete') && this.#selectedBox != -1) {
 			performEvent = true;
 			this.#grid[this.#selectedBox] = 0;
-			this.#boxes[this.#selectedBox].number = 0;
-			this.#boxes[this.#selectedBox].draw();
+			this.#boxes[this.#selectedBox]
+				.unsetText()
+				.draw();
 		} else if (keyEvent.key.includes("Arrow")) {
 			performEvent = true;
 			let newSelect;
@@ -215,10 +225,6 @@ class Sudoku {
 	}
 
 	#validNumber(grid, row, col, test) {
-		console.log(grid);
-		console.log(row);
-		console.log(col);
-		console.log(test);
 		for (let i = 0 ; i < 9 ; i++) {
 			if (grid[row * 9 + i] == test || grid[i * 9 + col] == test) {
 				return false;
@@ -249,8 +255,12 @@ class Sudoku {
 				self.#solution = result.solution;
 				self.#grid = result.grid;
 				for(let i = 0; i < self.#boxes.length ; i++) {
-					self.#boxes[i].locked = self.#grid[i] != 0;
-					self.#boxes[i].number = self.#grid[i];
+					if (self.#grid[i] == 0) {
+						self.#boxes[i].unlock();
+					} else {
+						self.#boxes[i].lock();
+						self.#boxes[i].setText(self.#grid[i]);
+					}
 				}
 
 				self.#loading = false;

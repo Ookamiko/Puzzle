@@ -9,10 +9,11 @@ class Boxes {
 	#y = 0;
 	#width = 0;
 	#height = 0;
-	#number = 0;
+	#text = undefined;
 	#hint = [false, false, false, false, false, false, false, false, false];
 	#locked = false;
 	#selected = false;
+	#update_state = false;
 
 	constructor(ctx2d, x, y, width, height) {
 		this.#ctx = ctx2d;
@@ -20,65 +21,116 @@ class Boxes {
 		this.#y = y;
 		this.#width = width;
 		this.#height = height;
+		this.#update_state = true;
 	}
 
 	isClicked(x, y) {
 		return x > this.#x && x < this.#x + this.#width && y > this.#y && y < this.#y + this.#height;
 	}
 
-	toggleHint(num, draw=true) {
+	toggleHint(num) {
 		this.#hint[num - 1] = !this.#hint[num - 1];
 
-		if (this.#number != 0) {
-			this.#hint[this.#number - 1] = true;
-			this.#number = 0;
+		if (this.#text) {
+			this.#text = undefined;
 		}
 
-		if (draw) {
-			this.draw();
-		}
+		this.#update_state = true;
+
+		return this;
 	}
 
-	setHint(num, draw=true) {
-		this.#hint[num - 1] = true;
+	setHint(num) {
+		if (!this.#hint[num - 1]) {
+			this.#hint[num - 1] = true;
 
-		if (this.#number != 0) {
-			this.#hint[this.#number - 1] = true;
-			this.#number = 0;
-		}
-
-		if (draw) {
-			this.draw();
-		}
-	}
-
-	unsetHint(num, draw=true) {
-		this.#hint[num - 1] = false;
-
-		if (draw) {
-			this.draw();
-		}
-	}
-
-	select(draw=true) {
-		if (!this.#locked) {
-			this.#selected = true;
-			if (draw) {
-				this.draw();
+			if (this.#text) {
+				this.#text = undefined;
 			}
+
+			this.#update_state = true;
 		}
+
+		return this;
 	}
 
-	unselect(draw=true) {
+	unsetHint(num) {
+		if (this.#hint[num - 1]) {
+			this.#hint[num - 1] = false;
+			this.#update_state = true;
+		}
+
+		return this;
+	}
+
+	setText(text) {
+		if (this.#text != text) {
+			this.#text = text;
+
+			this.#update_state = true;
+		}
+
+		return this;
+	}
+
+	unsetText() {
+		if (this.#text) {
+			this.#text = undefined;
+
+			this.#update_state = true;
+		}
+
+		return this;
+	}
+
+	lock() {
 		if (!this.#locked) {
+			this.#locked = true;
 			this.#selected = false;
-			if (draw) {
-				this.draw();
+
+			this.#update_state = true;
+		}
+
+		return this;
+	}
+
+	unlock() {
+		if (this.#locked) {
+			this.#locked = false;
+
+			this.#update_state = true;
+		}
+
+		return this;
+	}
+
+	select() {
+		if (!this.#locked) {
+			if (!this.#selected) {
+				this.#selected = true;
+				this.#update_state = true;
 			}
 		}
+
+		return this;
+	}
+
+	unselect() {
+		if (!this.#locked) {
+			if (this.#selected) {
+				this.#selected = false;
+				this.#update_state = true;
+			}
+		}
+
+		return this;
 	}
 
 	draw() {
+		if (!this.#update_state) return this;
+
+		this.#update_state = false;
+
 		this.#ctx.save();
 
 		this.#ctx.translate(this.#x, this.#y);
@@ -89,7 +141,7 @@ class Boxes {
 			this.#ctx.fillRect(0, 0, this.#width, this.#height);
 		}
 
-		if (this.#number != 0) {
+		if (this.#text) {
 			if (this.#locked) {
 				this.#ctx.fillStyle = "black";
 			} else {
@@ -98,10 +150,10 @@ class Boxes {
 			this.#ctx.font = '75px sans-serif';
 			this.#ctx.textAlign = 'center';
 
-			let metrics = this.#ctx.measureText(this.#number);
+			let metrics = this.#ctx.measureText(this.#text);
 			let fontHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
 
-			this.#ctx.fillText(this.#number, 0 + this.#width / 2, (this.#height + fontHeight) / 2);
+			this.#ctx.fillText(this.#text, 0 + this.#width / 2, (this.#height + fontHeight) / 2);
 		} else {
 			let size = this.#width / 3;
 			this.#ctx.font = '20px sans-serif';
@@ -119,23 +171,17 @@ class Boxes {
 		this.#ctx.strokeRect(0, 0, this.#width, this.#height);
 
 		this.#ctx.restore();
+
+		return this;
 	}
 
 	// Accessor
 	
-	get number() {
-		return this.#number;
-	}
-
-	set number(value) {
-		this.#number = value;
+	get text() {
+		return this.#text;
 	}
 
 	get locked() {
 		return this.#locked;
-	}
-
-	set locked(value) {
-		this.#locked = value;
 	}
 }
