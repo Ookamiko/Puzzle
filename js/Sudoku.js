@@ -114,7 +114,7 @@ class Sudoku {
 		if (this.#selectedBox != index) {
 			if (this.#selectedBox != -1) {
 				this.#boxes[this.#selectedBox].unselect();
-				
+
 				this.#selectedRow.concat(this.#selectedCol).forEach((i) => {
 					this.#boxes[i].unhighlight();
 				});
@@ -172,6 +172,7 @@ class Sudoku {
 				if (this.#validNumber(this.#grid, row, col, key)) {
 					this.#grid[this.#selectedBox] = key;
 					this.#boxes[this.#selectedBox].setText(key);
+					this.#removeOverlapingHint(row, col, key);
 					this.#update_state = true;
 				}
 			}
@@ -266,6 +267,19 @@ class Sudoku {
 		}
 
 		return true;
+	}
+
+	#removeOverlapingHint(row, col, value) {
+		for (let i = 0 ; i < 9 ; i++) {
+			this.#boxes[row * 9 + i].unsetHint(value);
+			this.#boxes[[i * 9 + col]].unsetHint(value);
+		}
+
+		for (let r = row - (row % 3); r < row - (row % 3) + 3 ; r++) {
+			for (let c = col - (col % 3) ; c < col - (col % 3) + 3 ; c++) {
+				this.#boxes[r * 9 + c].unsetHint(value)
+			}
+		}
 	}
 
 	generateGrid() {
