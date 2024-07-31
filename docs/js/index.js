@@ -1,6 +1,6 @@
 const canvas = document.getElementById("master_canvas");
 const ctx = canvas.getContext("2d");
-const grid = new Sudoku(ctx, 0, 0, 100, 100);
+const grid = new Sudoku(ctx, 0, 0, 100, 100, 4);
 grid.finishEvent = function() {
 	alert("Win");
 }
@@ -8,7 +8,7 @@ grid.finishEvent = function() {
 canvas.width = grid.width;
 canvas.height = grid.height;
 
-canvas.addEventListener('click', function(event) {
+document.addEventListener('click', function(event) {
 	const rect = canvas.getBoundingClientRect();
 	const mouseX = event.clientX - rect.left;
 	const mouseY = event.clientY - rect.top;

@@ -310,7 +310,7 @@ class Sudoku {
 	generateGrid() {
 		this.#loading = true;
 		this.#loadingAnim();
-		const myWorker = new Worker("./js/worker.js");
+		const myWorker = new Worker("worker/SudokuW.js");
 		myWorker.postMessage([this.#size, this.#allowedNumbers, this.#grid]);
 
 		let self = this;
