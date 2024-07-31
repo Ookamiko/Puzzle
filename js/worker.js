@@ -13,16 +13,18 @@ function shuffle(array) {
 	}
 }
 
-function validNumber(cases, row, col, test) {
-	for (let i = 0 ; i < 9 ; i++) {
-		if (cases[row * 9 + i] == test || cases[i * 9 + col] == test) {
+function validNumber(cases, row, col, size, test) {
+	for (let i = 0 ; i < size ; i++) {
+		if (cases[row * size + i] == test || cases[i * size + col] == test) {
 			return false;
 		}
 	}
 
-	for (let r = row - (row % 3); r < row - (row % 3) + 3 ; r++) {
-		for (let c = col - (col % 3) ; c < col - (col % 3) + 3 ; c++) {
-			if (cases[r * 9 + c] == test) {
+	let sizeSqrt = Math.sqrt(size);
+
+	for (let r = row - (row % sizeSqrt); r < row - (row % sizeSqrt) + sizeSqrt ; r++) {
+		for (let c = col - (col % sizeSqrt) ; c < col - (col % sizeSqrt) + sizeSqrt ; c++) {
+			if (cases[r * size + c] == test) {
 				return false;
 			}
 		}
@@ -31,20 +33,20 @@ function validNumber(cases, row, col, test) {
 	return true;
 }
 
-function recursiveGen(boxes, numbers, index=0) {
+function recursiveGen(boxes, numbers, size, index=0) {
 	if (index >= boxes.length) {
 		return true;
 	}
 
-	let row = Math.floor(index / 9);
-	let col = index % 9;
+	let row = Math.floor(index / size);
+	let col = index % size;
 	shuffle(numbers);
 
 	for (let i = 0 ; i < numbers.length ; i++) {
 		let test = numbers[i];
-		if (validNumber(boxes, row, col, test)) {
+		if (validNumber(boxes, row, col, size, test)) {
 			boxes[index] = test;
-			if (recursiveGen(boxes, numbers, index+1)) {
+			if (recursiveGen(boxes, numbers, size, index+1)) {
 				return true;
 			} else {
 				boxes[index] = 0
@@ -55,7 +57,7 @@ function recursiveGen(boxes, numbers, index=0) {
 	return false;
 }
 
-function solveGrid(boxes, numbers, index=0) {
+function solveGrid(boxes, numbers, size, index=0) {
 	while(index < boxes.length && boxes[index] != 0) {
 		index += 1;
 	}
@@ -65,21 +67,21 @@ function solveGrid(boxes, numbers, index=0) {
 	}
 
 	let solution = 0;
-	let row = Math.floor(index / 9);
-	let col = index % 9;
+	let row = Math.floor(index / size);
+	let col = index % size;
 
 	for (let j = 0 ; j < numbers.length ; j++) {
-		if (validNumber(boxes, row, col, numbers[j])) {
+		if (validNumber(boxes, row, col, size, numbers[j])) {
 			let copy = boxes.slice();
 			copy[index] = numbers[j];
-			solution += solveGrid(copy, numbers, index+1);
+			solution += solveGrid(copy, numbers, size, index+1);
 		}
 	}
 
 	return solution;
 }
 
-function recursiveRemove(boxes, allowedNumbers, attemp) {
+function recursiveRemove(boxes, allowedNumbers, size, attemp) {
 	while (attemp > 0) {
 
 		let index = Math.floor(Math.random() * boxes.length);
@@ -89,7 +91,7 @@ function recursiveRemove(boxes, allowedNumbers, attemp) {
 
 		let remember = boxes[index];
 		boxes[index] = 0;
-		let count = solveGrid(boxes.slice(), allowedNumbers);
+		let count = solveGrid(boxes.slice(), allowedNumbers, size);
 
 		if (count != 1) {
 			attemp -= 1;
@@ -98,21 +100,18 @@ function recursiveRemove(boxes, allowedNumbers, attemp) {
 	}
 }
 
-onmessage = function(args) {
-	console.log('Start generating');
-	let boxes = [];
-	let allowedNumbers = [1,2,3,4,5,6,7,8,9];
+onmessage = function(event) {
+	let size = event.data[0]
+	let allowedNumbers = event.data[1];
+	let grid = event.data[2];
 	let solution = [];
-	for (let i = 0 ; i < 81 ; i++) {
-		boxes[i] = 0;
-	}
 
-	if(recursiveGen(boxes, allowedNumbers.slice())) {
-		solution = boxes.slice();
-		recursiveRemove(boxes, allowedNumbers, 100);
+	if(recursiveGen(grid, allowedNumbers.slice(), size)) {
+		solution = grid.slice();
+		recursiveRemove(grid, allowedNumbers, size, 20);
 	} else {
 		postMessage(undefined);
 	}
 
-	postMessage({'grid':boxes, 'solution': solution});
+	postMessage({'grid':grid, 'solution': solution});
 }

@@ -9,6 +9,9 @@ class Sudoku {
 	#y = 0;
 	#width = 0;
 	#height = 0;
+	#size = 9;
+	#sizePow = 81;
+	#sizeSqrt = 3;
 	#boxes;
 	#selectedBox = -1;
 	#selectedRow = [];
@@ -22,15 +25,24 @@ class Sudoku {
 	#update_state = false;
 	finishEvent;
 
-	constructor(ctx2d, x, y, boxW, boxH) {
+	constructor(ctx2d, x, y, boxW, boxH, size=9) {
+
+		if (!this.#isAllowedSize(size)) {
+			console.warn('Size not allowed. 4 or 9 expected. 9 taken as default.');
+			size = 9;
+		}
+
 		this.#ctx = ctx2d;
 		this.#x = x;
 		this.#y = y;
-		this.#width = 9 * boxW;
-		this.#height = 9 * boxH;
-		this.#boxes = this.#generateBoxes(ctx2d, x, y, boxW, boxH);
+		this.#size = size;
+		this.#sizePow = Math.pow(size, 2);
+		this.#sizeSqrt = Math.sqrt(size);
+		this.#width = size * boxW;
+		this.#height = size * boxH;
+		this.#boxes = this.#generateBoxes(boxW, boxH);
 		this.#selectedBox = -1;
-		this.#allowedNumbers = [1,2,3,4,5,6,7,8,9];
+		this.#allowedNumbers = this.#generateNumAllowed();
 		this.#solution = [];
 		this.#grid = [];
 		this.#loading = true;
@@ -38,23 +50,36 @@ class Sudoku {
 		this.#loadingAnimAngle = 0;
 		this.#update_state = true;
 
-		for (let i = 0 ; i < 81 ; i++) {
+		for (let i = 0 ; i < this.#sizePow ; i++) {
 			this.#grid[i] = 0;
 		}
 	}
 
-	#generateBoxes(ctx, x, y, width, height) {
+	#isAllowedSize(size) {
+		return size == 4 || size == 9;
+	}
+
+	#generateBoxes(width, height) {
 		let boxes = [];
 
-		for (let r = 0; r < 9 ; r++) {
-			for (let c = 0; c < 9 ; c++) {
+		for (let r = 0; r < this.#size ; r++) {
+			for (let c = 0; c < this.#size ; c++) {
 				boxes[boxes.length] = 
-					new Boxes(ctx, x + width * c, y + height * r, width, height)
+					new Boxes(this.#ctx, this.#x + width * c, this.#y + height * r, width, height)
 						.lock();
 			}
 		}
 
 		return boxes;
+	}
+
+	#generateNumAllowed() {
+		let result = [];
+		for (let num = 1 ; num <= this.#size ; num++) {
+			result.push(num);
+		}
+
+		return result;
 	}
 
 	#loadingAnim() {
@@ -156,18 +181,18 @@ class Sudoku {
 
 		if (this.#loading) return this;
 
-		let key = Number(keyEvent.key);
+		let key = keyEvent.key;
 		let performEvent = false;
 
-		if (key && this.#selectedBox != -1) {
+		if (this.#allowedNumbers.includes(key) && this.#selectedBox != -1) {
 			performEvent = true;
 
 			if (keyEvent.altKey) {
 				this.#boxes[this.#selectedBox].toggleHint(key);
 				this.#update_state = true;
 			} else {
-				let row = Math.floor(this.#selectedBox / 9);
-				let col = this.#selectedBox % 9;
+				let row = Math.floor(this.#selectedBox / this.#size);
+				let col = this.#selectedBox % this.#size;
 
 				if (this.#validNumber(this.#grid, row, col, key)) {
 					this.#grid[this.#selectedBox] = key;
@@ -194,13 +219,13 @@ class Sudoku {
 						newSelect = this.#getNextAvailableBox(this.#boxes, this.#selectedBox, 1);
 						break;
 					case "ArrowDown":
-						newSelect = this.#getNextAvailableBox(this.#boxes, this.#selectedBox, 9);
+						newSelect = this.#getNextAvailableBox(this.#boxes, this.#selectedBox, this.#size);
 						break;
 					case "ArrowLeft":
 						newSelect = this.#getNextAvailableBox(this.#boxes, this.#selectedBox, -1);
 						break;
 					case "ArrowUp":
-						newSelect = this.#getNextAvailableBox(this.#boxes, this.#selectedBox, -9);
+						newSelect = this.#getNextAvailableBox(this.#boxes, this.#selectedBox, -this.#size);
 						break;
 				}
 			}
@@ -237,30 +262,30 @@ class Sudoku {
 	}
 
 	#getRowCol(index) {
-		let row = Math.floor(index / 9);
-		let col = index % 9;
+		let row = Math.floor(index / this.#size);
+		let col = index % this.#size;
 
 		let pickRow = [];
 		let pickCol = [];
 
-		for (let i = 0 ; i < 9 ; i++) {
-			pickRow.push(row * 9 + i);
-			pickRow.push(i * 9 + col);
+		for (let i = 0 ; i < this.#size ; i++) {
+			pickRow.push(row * this.#size + i);
+			pickRow.push(i * this.#size + col);
 		}
 
 		return [pickRow, pickCol];
 	}
 
 	#validNumber(grid, row, col, test) {
-		for (let i = 0 ; i < 9 ; i++) {
-			if (grid[row * 9 + i] == test || grid[i * 9 + col] == test) {
+		for (let i = 0 ; i < this.#size ; i++) {
+			if (grid[row * this.#size + i] == test || grid[i * this.#size + col] == test) {
 				return false;
 			}
 		}
 
-		for (let r = row - (row % 3); r < row - (row % 3) + 3 ; r++) {
-			for (let c = col - (col % 3) ; c < col - (col % 3) + 3 ; c++) {
-				if (grid[r * 9 + c] == test) {
+		for (let r = row - (row % this.#sizeSqrt); r < row - (row % this.#sizeSqrt) + this.#sizeSqrt ; r++) {
+			for (let c = col - (col % this.#sizeSqrt) ; c < col - (col % this.#sizeSqrt) + this.#sizeSqrt ; c++) {
+				if (grid[r * this.#size + c] == test) {
 					return false;
 				}
 			}
@@ -270,14 +295,14 @@ class Sudoku {
 	}
 
 	#removeOverlapingHint(row, col, value) {
-		for (let i = 0 ; i < 9 ; i++) {
-			this.#boxes[row * 9 + i].unsetHint(value);
-			this.#boxes[[i * 9 + col]].unsetHint(value);
+		for (let i = 0 ; i < this.#size ; i++) {
+			this.#boxes[row * this.#size + i].unsetHint(value);
+			this.#boxes[[i * this.#size + col]].unsetHint(value);
 		}
 
-		for (let r = row - (row % 3); r < row - (row % 3) + 3 ; r++) {
-			for (let c = col - (col % 3) ; c < col - (col % 3) + 3 ; c++) {
-				this.#boxes[r * 9 + c].unsetHint(value)
+		for (let r = row - (row % this.#sizeSqrt); r < row - (row % this.#sizeSqrt) + this.#sizeSqrt ; r++) {
+			for (let c = col - (col % this.#sizeSqrt) ; c < col - (col % this.#sizeSqrt) + this.#sizeSqrt ; c++) {
+				this.#boxes[r * this.#size + c].unsetHint(value)
 			}
 		}
 	}
@@ -286,7 +311,7 @@ class Sudoku {
 		this.#loading = true;
 		this.#loadingAnim();
 		const myWorker = new Worker("./js/worker.js");
-		myWorker.postMessage([]);
+		myWorker.postMessage([this.#size, this.#allowedNumbers, this.#grid]);
 
 		let self = this;
 		myWorker.onmessage = function(e) {
@@ -328,9 +353,9 @@ class Sudoku {
 		this.#ctx.save();
 		this.#ctx.translate(this.#x, this.#y);
 		this.#ctx.lineWidth = 3;
-		for(let x = 0; x < 3 ; x++) {
-			for (let y = 0; y < 3 ; y++) {
-				this.#ctx.strokeRect((this.#width / 3) * x, (this.#height / 3) * y, this.#width / 3, this.#height / 3);
+		for(let x = 0; x < this.#sizeSqrt ; x++) {
+			for (let y = 0; y < this.#sizeSqrt ; y++) {
+				this.#ctx.strokeRect((this.#width / this.#sizeSqrt) * x, (this.#height / this.#sizeSqrt) * y, this.#width / this.#sizeSqrt, this.#height / this.#sizeSqrt);
 			}
 		}
 
