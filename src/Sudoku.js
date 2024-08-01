@@ -1,5 +1,5 @@
 /*
-version = 1.0.0_beta1
+version = 1.0.0_beta2
  */
 
 class Sudoku {
