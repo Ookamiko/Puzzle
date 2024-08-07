@@ -76,7 +76,7 @@ class Sudoku {
 	#generateNumAllowed() {
 		let result = [];
 		for (let num = 1 ; num <= this.#size ; num++) {
-			result.push(num);
+			result.push('' + num);
 		}
 
 		return result;
