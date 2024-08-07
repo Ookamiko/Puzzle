@@ -194,7 +194,7 @@ class Sudoku {
 				let row = Math.floor(this.#selectedBox / this.#size);
 				let col = this.#selectedBox % this.#size;
 
-				if (this.#validNumber(this.#grid, row, col, key)) {
+				if (this.#validNumber(this.#grid, row, col, this.#size, key)) {
 					this.#grid[this.#selectedBox] = key;
 					this.#boxes[this.#selectedBox].setText(key);
 					this.#removeOverlapingHint(row, col, key);
@@ -276,16 +276,18 @@ class Sudoku {
 		return [pickRow, pickCol];
 	}
 
-	#validNumber(grid, row, col, test) {
-		for (let i = 0 ; i < this.#size ; i++) {
-			if (grid[row * this.#size + i] == test || grid[i * this.#size + col] == test) {
+	#validNumber(grid, row, col, size, test) {
+		for (let i = 0 ; i < size ; i++) {
+			if (grid[row * size + i] == test || grid[i * size + col] == test) {
 				return false;
 			}
 		}
 
-		for (let r = row - (row % this.#sizeSqrt); r < row - (row % this.#sizeSqrt) + this.#sizeSqrt ; r++) {
-			for (let c = col - (col % this.#sizeSqrt) ; c < col - (col % this.#sizeSqrt) + this.#sizeSqrt ; c++) {
-				if (grid[r * this.#size + c] == test) {
+		let sizeSqrt = Math.sqrt(size);
+
+		for (let r = row - (row % sizeSqrt); r < row - (row % sizeSqrt) + sizeSqrt ; r++) {
+			for (let c = col - (col % sizeSqrt) ; c < col - (col % sizeSqrt) + sizeSqrt ; c++) {
+				if (grid[r * size + c] == test) {
 					return false;
 				}
 			}
@@ -307,8 +309,72 @@ class Sudoku {
 		}
 	}
 
+	#checkUniqueSolution(boxes, numbers, size, index=0) {
+		while(index < boxes.length && boxes[index] != 0) {
+			index += 1;
+		}
+
+		if (index >= boxes.length) {
+			return 1;
+		}
+
+		let solution = 0;
+		let row = Math.floor(index / size);
+		let col = index % size;
+
+		for (let j = 0 ; j < numbers.length ; j++) {
+			if (this.#validNumber(boxes, row, col, size, numbers[j])) {
+				let copy = boxes.slice();
+				copy[index] = numbers[j];
+				solution += this.#checkUniqueSolution(copy, numbers, size, index+1);
+			}
+
+			if (solution > 1) {
+				break;
+			}
+		}
+
+		return solution;
+	}
+
+	#shuffle(array) {
+		let size = array.length;
+
+		for (let i = 0; i < size * 2; i++) {
+			let randa = Math.floor(Math.random() * size);
+			let randb = Math.floor(Math.random() * size);
+
+			[array[randa], array[randb]] = [array[randb], array[randa]];
+		}
+	}
+
+	#recursiveGen(boxes, numbers, size, index=0) {
+		if (index >= boxes.length) {
+			return true;
+		}
+
+		let row = Math.floor(index / size);
+		let col = index % size;
+		this.#shuffle(numbers);
+
+		for (let i = 0 ; i < numbers.length ; i++) {
+			let test = numbers[i];
+			if (this.#validNumber(boxes, row, col, size, test)) {
+				boxes[index] = test;
+				if (this.#recursiveGen(boxes, numbers, size, index+1)) {
+					return true;
+				} else {
+					boxes[index] = 0
+				}
+			}
+		}
+
+		return false;
+	}
+
 	#chunckedGeneration(maxAttemp, callback) {
 
+		let self = this;
 		let attemp = maxAttemp;
 		let solution = [];
 		let grid = this.#grid.slice();
@@ -317,99 +383,18 @@ class Sudoku {
 		let cursor = 0;
 		let allowedNumbers = this.#allowedNumbers;
 
-		function shuffle(array) {
-			let size = array.length;
-
-			for (let i = 0; i < size * 2; i++) {
-				let randa = Math.floor(Math.random() * size);
-				let randb = Math.floor(Math.random() * size);
-
-				[array[randa], array[randb]] = [array[randb], array[randa]];
-			}
-		}
-
-		function recursiveGen(boxes, numbers, size, index=0) {
-			if (index >= boxes.length) {
-				return true;
-			}
-
-			let row = Math.floor(index / size);
-			let col = index % size;
-			shuffle(numbers);
-
-			for (let i = 0 ; i < numbers.length ; i++) {
-				let test = numbers[i];
-				if (validNumber(boxes, row, col, size, test)) {
-					boxes[index] = test;
-					if (recursiveGen(boxes, numbers, size, index+1)) {
-						return true;
-					} else {
-						boxes[index] = 0
-					}
-				}
-			}
-
-			return false;
-		}
-
-		function validNumber(cases, row, col, size, test) {
-			for (let i = 0 ; i < size ; i++) {
-				if (cases[row * size + i] == test || cases[i * size + col] == test) {
-					return false;
-				}
-			}
-
-			let sizeSqrt = Math.sqrt(size);
-
-			for (let r = row - (row % sizeSqrt); r < row - (row % sizeSqrt) + sizeSqrt ; r++) {
-				for (let c = col - (col % sizeSqrt) ; c < col - (col % sizeSqrt) + sizeSqrt ; c++) {
-					if (cases[r * size + c] == test) {
-						return false;
-					}
-				}
-			}
-
-			return true;
-		}
-
-		function checkUniqueSolution(boxes, numbers, size, index=0) {
-			while(index < boxes.length && boxes[index] != 0) {
-				index += 1;
-			}
-
-			if (index >= boxes.length) {
-				return 1;
-			}
-
-			let solution = 0;
-			let row = Math.floor(index / size);
-			let col = index % size;
-
-			for (let j = 0 ; j < numbers.length ; j++) {
-				if (validNumber(boxes, row, col, size, numbers[j])) {
-					let copy = boxes.slice();
-					copy[index] = numbers[j];
-					solution += checkUniqueSolution(copy, numbers, size, index+1);
-				}
-
-				if (solution > 1) {
-					break;
-				}
-			}
-
-			return solution;
-		}
+		
 
 		function processStep() {
 
 			if (solution.length == 0) {
-				if(recursiveGen(grid, allowedNumbers.slice(), size)) {
+				if(self.#recursiveGen(grid, allowedNumbers.slice(), size)) {
 					solution = grid.slice();
 
 					for(var i = 0 ; i < grid.length ; i++) {
 						indexes.push(i);
 					}
-					shuffle(indexes);
+					self.#shuffle(indexes);
 
 					setTimeout(processStep, 0);
 				} else {
@@ -423,7 +408,7 @@ class Sudoku {
 					let index = indexes[cursor]
 					let remember = grid[index];
 					grid[index] = 0;
-					let count = checkUniqueSolution(grid.slice(), allowedNumbers, size);
+					let count = self.#checkUniqueSolution(grid.slice(), allowedNumbers, size);
 
 					if (count != 1) {
 						grid[index] = remember;
